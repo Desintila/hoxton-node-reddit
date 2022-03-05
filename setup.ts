@@ -141,8 +141,52 @@ const comments = [
   }
 ]
 
+const postUpvotes = [
+  {
+    postId: 1,
+    userId: 2
+  },
+  {
+    postId: 2,
+    userId: 3
+  },
+  {
+    postId: 4,
+    userId: 3
+  },
+  {
+    postId: 4,
+    userId: 4
+  },
+  {
+    postId: 1,
+    userId: 4
+  }
+]
+
+const postDownvotes = [
+  {
+    postId: 1,
+    userId: 1
+  },
+  {
+    postId: 2,
+    userId: 4
+  },
+  {
+    postId: 3,
+    userId: 3
+  },
+  {
+    postId: 2,
+    userId: 2
+  }
+]
+
 db.exec(`
 DROP TABLE IF EXISTS usersubreddits;
+DROP TABLE IF EXISTS postUpvotes;
+DROP TABLE IF EXISTS postDownvotes;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS users;
@@ -194,6 +238,22 @@ CREATE TABLE users (
     FOREIGN KEY ("userId") REFERENCES "users" ("id"),
     FOREIGN KEY ("subredditId") REFERENCES "subreddits" ("id")
   );
+
+  CREATE TABLE postUpvotes (
+    "id" integer PRIMARY KEY,
+    "postId" integer,
+    "userId" integer,
+    FOREIGN KEY ("userId") REFERENCES "users" ("id"),
+    FOREIGN KEY ("postId") REFERENCES "posts" ("id")
+  );
+
+  CREATE TABLE postDownvotes (
+    "id" integer PRIMARY KEY,
+    "postId" integer,
+    "userId" integer,
+    FOREIGN KEY ("userId") REFERENCES "users" ("id"),
+    FOREIGN KEY ("postId") REFERENCES "posts" ("id")
+  );
 `)
 
 const createUser = db.prepare(`
@@ -215,6 +275,14 @@ INSERT INTO posts(description,title,created,userId,subredditId) VALUES (?,?,?,?,
 const createComment = db.prepare(`
 INSERT INTO comments(text,userId,postId) VALUES (?,?,?);
 `)
+
+const createUpvote = db.prepare(`
+INSERT INTO postUpvotes(userId,postId) VALUES (?,?);
+`)
+
+const createDownvote = db.prepare(`
+INSERT INTO postDownvotes(userId,postId) VALUES (?,?);
+`)
 for (const user of users) {
   createUser.run(user.username, user.email, user.password)
 }
@@ -233,4 +301,12 @@ for (const post of posts) {
 
 for (const comment of comments) {
   createComment.run(comment.text, comment.userId, comment.postId)
+}
+
+for (const upvote of postUpvotes) {
+  createUpvote.run(upvote.userId, upvote.postId)
+}
+
+for (const downvote of postDownvotes) {
+  createDownvote.run(downvote.userId, downvote.postId)
 }
